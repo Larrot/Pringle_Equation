@@ -65,17 +65,22 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
 
         return x
     # Spatial step
-    h = (R_out-R_in)/(N-1)
+    # h = (R_out-R_in)/(N-1)
 
     # consts
 
-    C = 6*tau/h**2*10**(4)
+    # C = 6*tau/h**2*10**(4)
+    # C = 6*tau/0.0001**2*10**(4)
 
     # Spatial grid
     x = np.logspace(R_in, R_out, N)
     # x = np.linspace(R_in, R_out, N)
     # Initial time
     t = 0
+
+    # C = 9*tau*10**4
+    # C = 6*tau
+    C = 9*tau*10**4
 
     # Solution function
     u = np.zeros(N)
@@ -87,9 +92,9 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
 
     # Boundary conditions
     # Left
-    u[0] = u_left(u, R_in, t)
+    u[0] = u_left(u, x[0], t)
     # Right
-    u[N-1] = u_right(u, R_out, t)
+    u[N-1] = u_right(u, x[N-1], t)
 
     # Array for iterative process
     u_iter = u.copy()
@@ -103,24 +108,50 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
 
     # The coefficient at the term Sigma_{k+1}
     def q(k):
-        a = (x[k+1]+x[k])/2
-        q = a**(1/2)*(x[k+1])**(1/2)/(x[k]+x[k+1])
+        a1 = (x[k]/2+x[k+1]/2)
+        a2 = (x[k-1]/2+x[k]/2)
+        a = a1**2 - a2**2
+        
+        # b = a1**(1/2)/(x[k+1]-x[k])
+        
+
+        # q = b/a*x[k+1]**(1/2)
+        
+        b = a1/(x[k+1]**(3/2)-x[k]**(3/2))
+        
+        q = b/a*x[k+1]**(1/2)
 
         return q
 
     # The coefficient at the term Sigma_{k}
     def w(k):
-        a = (x[k+1]+x[k])/2
-        b = (x[k]+x[k-1])/2
-        w = (a**(1/2)+b**(1/2))*(x[k])**(1/2)/(x[k]+x[k+1])
-
+        a1 = (x[k]/2+x[k+1]/2)
+        a2 = (x[k-1]/2+x[k]/2)
+        a = a1**2 - a2**2
+        
+        # b = a1**(1/2)/(x[k+1]-x[k])
+        # c = a2**(1/2)/(x[k]-x[k-1])
+        
+        # w = (b+c)/a*x[k]**(1/2)
+        b = a1/(x[k+1]**(3/2)-x[k]**(3/2))
+        c = a2/(x[k]**(3/2)-x[k-1]**(3/2))
+        
+        w = (b+c)/a*x[k]**(1/2)
         return w
 
     # The coefficient at the term Sigma_{k-1}
     def e(k):
-        b = (x[k]+x[k-1])/2
-        e = b**(1/2)*(x[k-1])**(1/2)/(x[k]+x[k+1])
-
+        a1 = (x[k]/2+x[k+1]/2)
+        a2 = (x[k-1]/2+x[k]/2)
+        a = a1**2 - a2**2
+        
+        # c = a2**(1/2)/(x[k]-x[k-1])
+        
+        # e = c/a*x[k-1]**(1/2)
+        
+        c = a2/(x[k]**(3/2)-x[k-1]**(3/2))
+        
+        e = c/a*x[k-1]**(1/2)
         return e
 
     while t < t_end:
@@ -133,9 +164,9 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
             for i in range(1, N-3):
                 RP[i] = u[i+1]
             RP[0] = u[1]+C*e(1)*D(u_iter[0], x[0], t+tau) * \
-                u_left(u, R_in, t+tau)
+                u_left(u, x[0], t+tau)
             RP[N-3] = u[N-2]+C*q(N-2)*D(u_iter[N-1], x[N-1],
-                                        t+tau)*u_right(u, R_out, t+tau)
+                                        t+tau)*u_right(u, x[N-1], t+tau)
 
             # Filling lower diagonal
             for i in range(N-3):
@@ -160,8 +191,8 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
                 break
 
         # New boundary conditions
-        u_iter[0] = u_left(u, R_in, t+tau)
-        u_iter[N-1] = u_right(u, R_out, t+tau)
+        u_iter[0] = u_left(u, x[0], t+tau)
+        u_iter[N-1] = u_right(u, x[N-1], t+tau)
 
         # Array on the next time layer
         u = u_iter.copy()
