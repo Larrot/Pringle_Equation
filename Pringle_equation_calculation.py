@@ -1,9 +1,9 @@
 import numpy as np
-from General_Pringle import General_Pringle
+from Pringle_module import General_Pringle
 
 
 # Степень вязкости
-gamma = -1
+gamma = 1
 
 # Коэффициент диффузии
 def Diff(u, x, t):
