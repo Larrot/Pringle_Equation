@@ -1,5 +1,5 @@
 import numpy as np
-
+import scipy
 
 def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsilon):
     """
@@ -72,8 +72,9 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
     t = 0
 
     # C = 9*tau*10**4
-    # C = 6*tau
-    C = 9*tau*10**4
+    C = 6*tau
+    # C = 9*tau*10**4
+    # C = 9*tau
 
     # Solution function
     u = np.zeros(N)
@@ -85,9 +86,9 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
 
     # Boundary conditions
     # Left
-    u[0] = u_left(u, x[0], t)
+    # u[0] = u_left(u, x[0], x[1], t)
     # Right
-    u[N-1] = u_right(u, x[N-1], t)
+    # u[N-1] = u_right(u, x[N-1], t)
 
     # Array for iterative process
     u_iter = u.copy()
@@ -157,7 +158,7 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
             for i in range(1, N-3):
                 RP[i] = u[i+1]
             RP[0] = u[1]+C*e(1)*D(u_iter[0], x[0], t+tau) * \
-                u_left(u, x[0], t+tau)
+                u_left(u, x[0], x[1], t+tau)
             RP[N-3] = u[N-2]+C*q(N-2)*D(u_iter[N-1], x[N-1],
                                         t+tau)*u_right(u, x[N-1], t+tau)
 
@@ -174,6 +175,17 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
 
             # Solving system of equations
             u_iter[1:N-1] = Tridiagonal_solver(a, b, c, RP)
+            
+            # Linear system of equations solver
+           
+            # LES = np.diag(b,0) + np.diag(c,1) + np.diag(a,-1) 
+            # u_iter[1:N-1] = np.linalg.solve(LES, RP)
+            # u_iter[1:N-1] = scipy.linalg.solve(LES, RP)
+            
+            # if np.allclose(np.dot(LES, u_iter[1:N-1]), RP):
+                # print('OK')
+            # else:
+                # print('NOT')
 
             # Finding error
             for i in range(N):
@@ -184,7 +196,7 @@ def General_Pringle(D, u_init, u_left, u_right, t_end, R_in, R_out, tau, N, epsi
                 break
 
         # New boundary conditions
-        u_iter[0] = u_left(u, x[0], t+tau)
+        u_iter[0] = u_left(u, x[0], x[1], t+tau)
         u_iter[N-1] = u_right(u, x[N-1], t+tau)
 
         # Array on the next time layer
